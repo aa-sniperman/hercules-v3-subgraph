@@ -8,7 +8,7 @@ import { ZERO_BD, ZERO_BI } from '../src/utils/constants'
 
 export const NULL_ETH_HEX_STRING = '0x0000000000000000000000000000000000000000000000000000000000000001'
 
-const USDC_MAINNET_ADDRESS = '0xEA32A96608495e54156Ae48931A7c20f0dcc1a21'
+const USDC_MAINNET_ADDRESS = '0xea32a96608495e54156ae48931a7c20f0dcc1a21'
 const WETH_MAINNET_ADDRESS = '0x420000000000000000000000000000000000000a'
 const WMETIS_MAINNET_ADDRESS = '0x75cb093e4d61d2a2e65d8e0bbb01de8d89b53481'
 export const USDC_WMETIS_03_MAINNET_POOL = '0xa4e4949e0cccd8282f30e7e113d8a551a1ed1aeb'
@@ -83,8 +83,8 @@ export const USDC_WMETIS_03_MAINNET_POOL_FIXTURE: PoolFixture = {
 
 export const WETH_WMETIS_03_MAINNET_POOL_FIXTURE: PoolFixture = {
   address: WETH_WMETIS_03_MAINNET_POOL,
-  token0: WMETIS_MAINNET_FIXTURE,
-  token1: WETH_MAINNET_FIXTURE,
+  token0: WETH_MAINNET_FIXTURE,
+  token1: WMETIS_MAINNET_FIXTURE,
   feeTier: '3000',
   tickSpacing: '60',
   liquidity: '200',
@@ -108,8 +108,6 @@ export const MOCK_EVENT = newMockEvent()
 
 export const invokePoolCreatedWithMockedEthCalls = (mockEvent: ethereum.Event): void => {
   const pool = getPoolFixture(USDC_WMETIS_03_MAINNET_POOL)
-  const feeTier = pool.feeTier
-  const tickSpacing = pool.tickSpacing
   const token0 = getTokenFixture(pool.token0.address)
   const token1 = getTokenFixture(pool.token1.address)
 
@@ -119,8 +117,6 @@ export const invokePoolCreatedWithMockedEthCalls = (mockEvent: ethereum.Event): 
   const parameters = [
     new ethereum.EventParam('token0', ethereum.Value.fromAddress(token0Address)),
     new ethereum.EventParam('token1', ethereum.Value.fromAddress(token1Address)),
-    new ethereum.EventParam('fee', ethereum.Value.fromI32(parseInt(feeTier) as i32)),
-    new ethereum.EventParam('tickSpacing', ethereum.Value.fromI32(parseInt(tickSpacing) as i32)),
     new ethereum.EventParam('pool', ethereum.Value.fromAddress(poolAddress)),
   ]
   const poolCreatedEvent = new PoolEvent(
@@ -139,7 +135,7 @@ export const invokePoolCreatedWithMockedEthCalls = (mockEvent: ethereum.Event): 
   createMockedFunction(token0Address, 'totalSupply', 'totalSupply():(uint256)').returns([
     ethereum.Value.fromUnsignedBigInt(BigInt.fromString(token0.totalSupply)),
   ])
-  createMockedFunction(token0Address, 'decimals', 'decimals():(uint32)').returns([
+  createMockedFunction(token0Address, 'decimals', 'decimals():(uint8)').returns([
     ethereum.Value.fromUnsignedBigInt(BigInt.fromString(token0.decimals)),
   ])
   // create mock contract calls for token1
@@ -148,9 +144,21 @@ export const invokePoolCreatedWithMockedEthCalls = (mockEvent: ethereum.Event): 
   createMockedFunction(token1Address, 'totalSupply', 'totalSupply():(uint256)').returns([
     ethereum.Value.fromUnsignedBigInt(BigInt.fromString(token1.totalSupply)),
   ])
-  createMockedFunction(token1Address, 'decimals', 'decimals():(uint32)').returns([
+  createMockedFunction(token1Address, 'decimals', 'decimals():(uint8)').returns([
     ethereum.Value.fromUnsignedBigInt(BigInt.fromString(token1.decimals)),
   ])
+  for (let i = i32.MIN_VALUE; i < i32.MAX_VALUE; i++) {
+    createMockedFunction(poolAddress, 'ticks', 'ticks(int24):(uint256,int128,int24,int24,uint256,uint256)')
+      .withArgs([ethereum.Value.fromSignedBigInt(BigInt.fromI32(i))])
+      .returns([
+        ethereum.Value.fromUnsignedBigInt(ZERO_BI),
+        ethereum.Value.fromSignedBigInt(ZERO_BI),
+        ethereum.Value.fromSignedBigInt(ZERO_BI),
+        ethereum.Value.fromSignedBigInt(ZERO_BI),
+        ethereum.Value.fromUnsignedBigInt(ZERO_BI),
+        ethereum.Value.fromUnsignedBigInt(ZERO_BI),
+      ])
+  }
   handlePoolCreated(poolCreatedEvent)
 }
 

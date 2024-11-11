@@ -36,9 +36,9 @@ export function priceToTokenPrices(price: BigInt, token0: Token, token1: Token):
 }
 
 export function getNativePriceInUSD(): BigDecimal {
-  let usdcPool = Pool.load(USDC_WMETIS_03_POOL) // dai is token0
+  let usdcPool = Pool.load(USDC_WMETIS_03_POOL) // usdc is token1
   if (usdcPool !== null) {
-    return usdcPool.token0Price
+    return usdcPool.token1Price
   } else {
     return ZERO_BD
   }

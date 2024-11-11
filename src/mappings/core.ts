@@ -1,6 +1,5 @@
 /* eslint-disable prefer-const */
 import { BigDecimal, BigInt, ethereum } from '@graphprotocol/graph-ts'
-import { log } from 'matchstick-as'
 
 import { Pool as PoolABI } from '../types/Factory/Pool'
 import { Bundle, Burn, Factory, Mint, Pool, PoolFeeData, PoolPosition, Swap, Tick, Token } from '../types/schema'

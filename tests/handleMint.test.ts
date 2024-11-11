@@ -6,6 +6,7 @@ import { Bundle, Pool, Token } from '../src/types/schema'
 import { Mint } from '../src/types/templates/Pool/Pool'
 import { convertTokenToDecimal, fastExponentiation, safeDiv } from '../src/utils'
 import { FACTORY_ADDRESS, ONE_BD } from '../src/utils/constants'
+import { hexToInt24 } from '../src/utils/tick'
 import {
   assertObjectMatches,
   invokePoolCreatedWithMockedEthCalls,
@@ -28,15 +29,15 @@ class MintFixture {
   amount1: BigInt
 }
 
-// https://etherscan.io/tx/0x0338617bb36e23bbd4074b068ea79edd07f7ef0db13fc0cd06ab8e57b9012764
+// https://explorer.metis.io/tx/0xb6fce507d7d8dbb29742cd09e74d45b7834e17997c54c1232124acc57e390cca
 const MINT_FIXTURE: MintFixture = {
-  sender: Address.fromString('0xc36442b4a4522e871399cd717abdd847ab11fe88'),
-  owner: Address.fromString('0xc36442b4a4522e871399cd717abdd847ab11fe88'),
-  tickLower: 195600,
-  tickUpper: 196740,
-  amount: BigInt.fromString('386405747494368'),
-  amount0: BigInt.fromString('1000000000'),
-  amount1: BigInt.fromString('66726312884609397'),
+  sender: Address.fromString('0x15030b11560F1615a3C07430cd1b130e0FD991f9'),
+  owner: Address.fromString('0x3c93aef118f8c2183b32dca29aa6220f2b2a1593'),
+  tickLower: hexToInt24('0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffff2764c'),
+  tickUpper: hexToInt24('0x00000000000000000000000000000000000000000000000000000000000d89b4'),
+  amount: BigInt.fromString('25884214074323'),
+  amount0: BigInt.fromString('6699925382453724202'),
+  amount1: BigInt.fromString('100000000'),
 }
 
 const MINT_EVENT = new Mint(
@@ -50,8 +51,8 @@ const MINT_EVENT = new Mint(
     new ethereum.EventParam('sender', ethereum.Value.fromAddress(MINT_FIXTURE.sender)),
     new ethereum.EventParam('owner', ethereum.Value.fromAddress(MINT_FIXTURE.owner)),
     new ethereum.EventParam('bottomTick', ethereum.Value.fromI32(MINT_FIXTURE.tickLower)),
-    new ethereum.EventParam('liquidityAmount', ethereum.Value.fromI32(MINT_FIXTURE.tickUpper)),
-    new ethereum.EventParam('amount', ethereum.Value.fromUnsignedBigInt(MINT_FIXTURE.amount)),
+    new ethereum.EventParam('topTick', ethereum.Value.fromI32(MINT_FIXTURE.tickUpper)),
+    new ethereum.EventParam('liquidityAmount', ethereum.Value.fromUnsignedBigInt(MINT_FIXTURE.amount)),
     new ethereum.EventParam('amount0', ethereum.Value.fromUnsignedBigInt(MINT_FIXTURE.amount0)),
     new ethereum.EventParam('amount1', ethereum.Value.fromUnsignedBigInt(MINT_FIXTURE.amount1)),
   ],
@@ -83,12 +84,12 @@ describe('handleMint', () => {
 
     handleMint(MINT_EVENT)
 
-    const amountToken0 = convertTokenToDecimal(MINT_FIXTURE.amount0, BigInt.fromString(USDC_MAINNET_FIXTURE.decimals))
-    const amountToken1 = convertTokenToDecimal(MINT_FIXTURE.amount1, BigInt.fromString(WMETIS_MAINNET_FIXTURE.decimals))
+    const amountToken0 = convertTokenToDecimal(MINT_FIXTURE.amount0, BigInt.fromString(WMETIS_MAINNET_FIXTURE.decimals))
+    const amountToken1 = convertTokenToDecimal(MINT_FIXTURE.amount1, BigInt.fromString(USDC_MAINNET_FIXTURE.decimals))
     const poolTotalValueLockedMetis = amountToken0
-      .times(TEST_USDC_DERIVED_METIS)
-      .plus(amountToken1.times(TEST_WMETIS_DERIVED_METIS))
-    const poolTotalValueLockedUSD = poolTotalValueLockedMetis.times(TEST_WMETIS_DERIVED_METIS)
+      .times(TEST_WMETIS_DERIVED_METIS)
+      .plus(amountToken1.times(TEST_USDC_DERIVED_METIS))
+    const poolTotalValueLockedUSD = poolTotalValueLockedMetis.times(TEST_METIS_PRICE_USD)
 
     assertObjectMatches('Factory', FACTORY_ADDRESS, [
       ['txCount', '1'],
@@ -107,22 +108,22 @@ describe('handleMint', () => {
 
     assertObjectMatches('Token', USDC_MAINNET_FIXTURE.address, [
       ['txCount', '1'],
-      ['totalValueLocked', amountToken0.toString()],
-      ['totalValueLockedUSD', amountToken0.times(TEST_USDC_DERIVED_METIS.times(TEST_METIS_PRICE_USD)).toString()],
+      ['totalValueLocked', amountToken1.toString()],
+      ['totalValueLockedUSD', amountToken1.times(TEST_USDC_DERIVED_METIS.times(TEST_METIS_PRICE_USD)).toString()],
     ])
 
     assertObjectMatches('Token', WMETIS_MAINNET_FIXTURE.address, [
       ['txCount', '1'],
-      ['totalValueLocked', amountToken1.toString()],
-      ['totalValueLockedUSD', amountToken1.times(TEST_WMETIS_DERIVED_METIS.times(TEST_METIS_PRICE_USD)).toString()],
+      ['totalValueLocked', amountToken0.toString()],
+      ['totalValueLockedUSD', amountToken0.times(TEST_WMETIS_DERIVED_METIS.times(TEST_METIS_PRICE_USD)).toString()],
     ])
 
     assertObjectMatches('Mint', MOCK_EVENT.transaction.hash.toHexString() + '-' + MOCK_EVENT.logIndex.toString(), [
       ['transaction', MOCK_EVENT.transaction.hash.toHexString()],
       ['timestamp', MOCK_EVENT.block.timestamp.toString()],
       ['pool', USDC_WMETIS_03_MAINNET_POOL],
-      ['token0', USDC_MAINNET_FIXTURE.address],
-      ['token1', WMETIS_MAINNET_FIXTURE.address],
+      ['token0', WMETIS_MAINNET_FIXTURE.address],
+      ['token1', USDC_MAINNET_FIXTURE.address],
       ['owner', MINT_FIXTURE.owner.toHexString()],
       ['sender', MINT_FIXTURE.sender.toHexString()],
       ['origin', MOCK_EVENT.transaction.from.toHexString()],

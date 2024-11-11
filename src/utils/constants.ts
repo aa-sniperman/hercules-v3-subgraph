@@ -4,7 +4,7 @@ import { Address, BigDecimal, BigInt } from '@graphprotocol/graph-ts'
 import { Factory as FactoryContract } from '../types/templates/Pool/Factory'
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
-export const FACTORY_ADDRESS = '0xC5BfA92f27dF36d268422EE314a1387bB5ffB06A'
+export const FACTORY_ADDRESS = '0xc5bfa92f27df36d268422ee314a1387bb5ffb06a'
 
 export let ZERO_BI = BigInt.fromI32(0)
 export let ONE_BI = BigInt.fromI32(1)

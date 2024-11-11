@@ -59,12 +59,12 @@ describe('handleInitialize', () => {
     handleInitialize(INITIALIZE_EVENT)
 
     assertObjectMatches('Pool', USDC_WMETIS_03_MAINNET_POOL, [
-      ['price', INITIALIZE_FIXTURE.price.toString()],
+      ['sqrtPrice', INITIALIZE_FIXTURE.price.toString()],
       ['tick', INITIALIZE_FIXTURE.tick.toString()],
     ])
 
-    const expectedEthPrice = getNativePriceInUSD()
-    assertObjectMatches('Bundle', '1', [['ethPriceUSD', expectedEthPrice.toString()]])
+    const expectedMetisPrice = getNativePriceInUSD()
+    assertObjectMatches('Bundle', '1', [['metisPriceUSD', expectedMetisPrice.toString()]])
 
     const expectedToken0Price = findNativePerToken(token0 as Token)
     assertObjectMatches('Token', USDC_MAINNET_FIXTURE.address, [['derivedMetis', expectedToken0Price.toString()]])
@@ -85,9 +85,9 @@ describe('getNativePriceInUSD', () => {
     pool.token1Price = BigDecimal.fromString('1')
     pool.save()
 
-    const ethPriceUSD = getNativePriceInUSD()
+    const metisPriceUSD = getNativePriceInUSD()
 
-    assert.assertTrue(ethPriceUSD == BigDecimal.fromString('1'))
+    assert.assertTrue(metisPriceUSD == BigDecimal.fromString('1'))
   })
 })
 
@@ -102,15 +102,15 @@ describe('findNativePerToken', () => {
 
   test('success - token is wrapped native', () => {
     const token = createAndStoreTestToken(WMETIS_MAINNET_FIXTURE)
-    const ethPerToken = findNativePerToken(token as Token)
-    assert.assertTrue(ethPerToken == BigDecimal.fromString('1'))
+    const metisPerToken = findNativePerToken(token as Token)
+    assert.assertTrue(metisPerToken == BigDecimal.fromString('1'))
   })
 
   test('success - token is stablecoin', () => {
     const token = createAndStoreTestToken(USDC_MAINNET_FIXTURE)
-    const ethPerToken = findNativePerToken(token as Token)
+    const metisPerToken = findNativePerToken(token as Token)
     const expectedStablecoinPrice = safeDiv(BigDecimal.fromString('1'), TEST_METIS_PRICE_USD)
-    assert.assertTrue(ethPerToken == expectedStablecoinPrice)
+    assert.assertTrue(metisPerToken.equals(expectedStablecoinPrice))
   })
 
   test('success - token is not wrapped native or stablecoin', () => {
@@ -136,16 +136,23 @@ describe('findNativePerToken', () => {
 
   test('success - token is not wrapped native or stablecoin, but has no pools', () => {
     const token0 = createAndStoreTestToken(WETH_MAINNET_FIXTURE)
-    const ethPerToken = findNativePerToken(token0 as Token)
-    assert.assertTrue(ethPerToken == BigDecimal.fromString('0'))
+    const metisPerToken = findNativePerToken(token0 as Token)
+    assert.assertTrue(metisPerToken == BigDecimal.fromString('0'))
   })
 
   test('success - token is not wrapped native or stablecoin, but has no pools with liquidity', () => {
+    const pool = createAndStoreTestPool(WETH_WMETIS_03_MAINNET_POOL_FIXTURE)
+
+    pool.liquidity = BigInt.fromString('0')
+    pool.totalValueLockedToken1 = BigDecimal.fromString('0')
+    pool.token1Price = BigDecimal.fromString('5')
+    pool.save()
+
     const token0 = createAndStoreTestToken(WETH_MAINNET_FIXTURE)
     token0.whitelistPools = [WETH_WMETIS_03_MAINNET_POOL]
     token0.save()
 
-    const ethPerToken = findNativePerToken(token0 as Token)
-    assert.assertTrue(ethPerToken == BigDecimal.fromString('0'))
+    const metisPerToken = findNativePerToken(token0 as Token)
+    assert.assertTrue(metisPerToken == BigDecimal.fromString('0'))
   })
 })
