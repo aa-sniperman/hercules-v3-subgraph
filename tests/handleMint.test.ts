@@ -1,15 +1,16 @@
-import { Address, BigDecimal, BigInt, ethereum } from '@graphprotocol/graph-ts'
+import { Address, BigInt, ethereum } from '@graphprotocol/graph-ts'
 import { beforeAll, describe, test } from 'matchstick-as'
 
 import { handleMint } from '../src/mappings/core'
 import { Bundle, Pool, Token } from '../src/types/schema'
 import { Mint } from '../src/types/templates/Pool/Pool'
-import { convertTokenToDecimal, fastExponentiation, safeDiv } from '../src/utils'
-import { FACTORY_ADDRESS, ONE_BD } from '../src/utils/constants'
+import { convertTokenToDecimal } from '../src/utils'
+import { FACTORY_ADDRESS } from '../src/utils/constants'
 import { hexToInt24 } from '../src/utils/tick'
 import {
   assertObjectMatches,
   invokePoolCreatedWithMockedEthCalls,
+  MintFixture,
   MOCK_EVENT,
   TEST_METIS_PRICE_USD,
   TEST_USDC_DERIVED_METIS,
@@ -18,16 +19,6 @@ import {
   USDC_WMETIS_03_MAINNET_POOL,
   WMETIS_MAINNET_FIXTURE,
 } from './constants'
-
-class MintFixture {
-  sender: Address
-  owner: Address
-  tickLower: i32
-  tickUpper: i32
-  amount: BigInt
-  amount0: BigInt
-  amount1: BigInt
-}
 
 // https://explorer.metis.io/tx/0xb6fce507d7d8dbb29742cd09e74d45b7834e17997c54c1232124acc57e390cca
 const MINT_FIXTURE: MintFixture = {
@@ -61,7 +52,7 @@ const MINT_EVENT = new Mint(
 
 describe('handleMint', () => {
   beforeAll(() => {
-    invokePoolCreatedWithMockedEthCalls(MOCK_EVENT)
+    invokePoolCreatedWithMockedEthCalls(MOCK_EVENT, MINT_FIXTURE)
 
     const bundle = new Bundle('1')
     bundle.metisPriceUSD = TEST_METIS_PRICE_USD
@@ -118,7 +109,7 @@ describe('handleMint', () => {
       ['totalValueLockedUSD', amountToken0.times(TEST_WMETIS_DERIVED_METIS.times(TEST_METIS_PRICE_USD)).toString()],
     ])
 
-    assertObjectMatches('Mint', MOCK_EVENT.transaction.hash.toHexString() + '-' + MOCK_EVENT.logIndex.toString(), [
+    assertObjectMatches('Mint', MOCK_EVENT.transaction.hash.toHexString() + '#' + MOCK_EVENT.logIndex.toString(), [
       ['transaction', MOCK_EVENT.transaction.hash.toHexString()],
       ['timestamp', MOCK_EVENT.block.timestamp.toString()],
       ['pool', USDC_WMETIS_03_MAINNET_POOL],
@@ -136,8 +127,8 @@ describe('handleMint', () => {
       ['logIndex', MOCK_EVENT.logIndex.toString()],
     ])
 
-    const lowerTickPrice = fastExponentiation(BigDecimal.fromString('1.0001'), MINT_FIXTURE.tickLower)
-    assertObjectMatches('Tick', USDC_WMETIS_03_MAINNET_POOL + '#' + MINT_FIXTURE.tickLower.toString(), [
+    const lowerTickId = USDC_WMETIS_03_MAINNET_POOL + '#' + MINT_FIXTURE.tickLower.toString()
+    assertObjectMatches('Tick', lowerTickId, [
       ['tickIdx', MINT_FIXTURE.tickLower.toString()],
       ['pool', USDC_WMETIS_03_MAINNET_POOL],
       ['poolAddress', USDC_WMETIS_03_MAINNET_POOL],
@@ -145,12 +136,10 @@ describe('handleMint', () => {
       ['createdAtBlockNumber', MOCK_EVENT.block.number.toString()],
       ['liquidityGross', MINT_FIXTURE.amount.toString()],
       ['liquidityNet', MINT_FIXTURE.amount.toString()],
-      ['price0', lowerTickPrice.toString()],
-      ['price1', safeDiv(ONE_BD, lowerTickPrice).toString()],
     ])
 
-    const upperTickPrice = fastExponentiation(BigDecimal.fromString('1.0001'), MINT_FIXTURE.tickUpper)
-    assertObjectMatches('Tick', USDC_WMETIS_03_MAINNET_POOL + '#' + MINT_FIXTURE.tickUpper.toString(), [
+    const upperTickId = USDC_WMETIS_03_MAINNET_POOL + '#' + MINT_FIXTURE.tickUpper.toString()
+    assertObjectMatches('Tick', upperTickId, [
       ['tickIdx', MINT_FIXTURE.tickUpper.toString()],
       ['pool', USDC_WMETIS_03_MAINNET_POOL],
       ['poolAddress', USDC_WMETIS_03_MAINNET_POOL],
@@ -158,8 +147,6 @@ describe('handleMint', () => {
       ['createdAtBlockNumber', MOCK_EVENT.block.number.toString()],
       ['liquidityGross', MINT_FIXTURE.amount.toString()],
       ['liquidityNet', MINT_FIXTURE.amount.neg().toString()],
-      ['price0', upperTickPrice.toString()],
-      ['price1', safeDiv(ONE_BD, upperTickPrice).toString()],
     ])
   })
 

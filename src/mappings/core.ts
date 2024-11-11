@@ -126,6 +126,7 @@ export function handleMint(event: MintEvent): void {
   mint.amountUSD = amountUSD
   mint.tickLower = BigInt.fromI32(event.params.bottomTick)
   mint.tickUpper = BigInt.fromI32(event.params.topTick)
+  mint.logIndex = event.logIndex
 
   // tick entities
   let lowerTickIdx = event.params.bottomTick
@@ -269,6 +270,7 @@ export function handleBurn(event: BurnEvent): void {
   burn.amountUSD = amountUSD
   burn.tickLower = BigInt.fromI32(event.params.bottomTick)
   burn.tickUpper = BigInt.fromI32(event.params.topTick)
+  burn.logIndex = event.logIndex
 
   // tick entities
   let lowerTickId = poolAddress + '#' + BigInt.fromI32(event.params.bottomTick).toString()
@@ -469,6 +471,7 @@ export function handleSwap(event: SwapEvent): void {
   swap.amountUSD = amountTotalUSDTracked
   swap.tick = BigInt.fromI32(event.params.tick as i32)
   swap.price = event.params.price
+  swap.logIndex = event.logIndex
 
   // update fee growth
   let poolContract = PoolABI.bind(event.address)

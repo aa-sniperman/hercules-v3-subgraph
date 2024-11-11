@@ -63,6 +63,16 @@ export const getTokenFixture = (tokenAddress: string): TokenFixture => {
   }
 }
 
+export class MintFixture {
+  sender: Address
+  owner: Address
+  tickLower: i32
+  tickUpper: i32
+  amount: BigInt
+  amount0: BigInt
+  amount1: BigInt
+}
+
 export class PoolFixture {
   address: string
   token0: TokenFixture
@@ -106,7 +116,7 @@ export const TEST_WMETIS_DERIVED_METIS = BigDecimal.fromString('1')
 
 export const MOCK_EVENT = newMockEvent()
 
-export const invokePoolCreatedWithMockedEthCalls = (mockEvent: ethereum.Event): void => {
+export const invokePoolCreatedWithMockedEthCalls = (mockEvent: ethereum.Event, mintFixture: MintFixture): void => {
   const pool = getPoolFixture(USDC_WMETIS_03_MAINNET_POOL)
   const token0 = getTokenFixture(pool.token0.address)
   const token1 = getTokenFixture(pool.token1.address)
@@ -147,9 +157,10 @@ export const invokePoolCreatedWithMockedEthCalls = (mockEvent: ethereum.Event): 
   createMockedFunction(token1Address, 'decimals', 'decimals():(uint8)').returns([
     ethereum.Value.fromUnsignedBigInt(BigInt.fromString(token1.decimals)),
   ])
-  for (let i = i32.MIN_VALUE; i < i32.MAX_VALUE; i++) {
+  const ticksToMock: i32[] = [0, mintFixture.tickLower, mintFixture.tickUpper]
+  for (let i = 0; i < ticksToMock.length; i++) {
     createMockedFunction(poolAddress, 'ticks', 'ticks(int24):(uint256,int128,int24,int24,uint256,uint256)')
-      .withArgs([ethereum.Value.fromSignedBigInt(BigInt.fromI32(i))])
+      .withArgs([ethereum.Value.fromSignedBigInt(BigInt.fromI32(ticksToMock[i]))])
       .returns([
         ethereum.Value.fromUnsignedBigInt(ZERO_BI),
         ethereum.Value.fromSignedBigInt(ZERO_BI),

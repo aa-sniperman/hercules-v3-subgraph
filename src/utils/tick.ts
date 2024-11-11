@@ -42,16 +42,13 @@ export function createTick(tickId: string, tickIdx: i32, poolId: string, event: 
 }
 
 export function hexToInt24(hexString: string): i32 {
-  // Extract the last 6 characters (for a 24-bit value)
-  const trimmedHex = hexString.slice(-6)
+  // Convert hex to a number
+  let value = parseInt('0x' + hexString.slice(-6), 16)
 
-  // Parse the hex string as a base-16 integer
-  let intValue = parseInt(trimmedHex, 16)
-
-  // Check if the value is in the negative range for a 24-bit signed integer
-  if (intValue > 0x7fffff) {
-    intValue -= 0x1000000 // Convert to signed int24 range
+  // Handle two's complement for negative numbers
+  if (value >= 8388608) {
+    value -= 16777216 // Subtract 2^24 to get the negative value
   }
 
-  return intValue as i32
+  return value as i32
 }
